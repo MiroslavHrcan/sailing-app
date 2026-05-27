@@ -1,0 +1,212 @@
+<div class="trips-page">
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       PAGE HEADER
+  ════════════════════════════════════════════════════════════════════════ -->
+  <h1 class="page-title">
+    <mat-icon>sailing</mat-icon> Trips &amp; Ships
+  </h1>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       TRIPS SECTION
+  ════════════════════════════════════════════════════════════════════════ -->
+  <div class="section-header">
+    <h2 class="section-title"><mat-icon>flag</mat-icon> My Trips</h2>
+    <button mat-flat-button color="primary" (click)="openTripForm()">
+      <mat-icon>add</mat-icon> New Trip
+    </button>
+  </div>
+
+  <!-- Add / Edit trip form -->
+  @if (showTripForm() || editingTripId()) {
+    <div class="form-card">
+      <form [formGroup]="tripForm" (ngSubmit)="saveTrip()">
+
+        <div class="form-grid-3">
+          <mat-form-field appearance="outline">
+            <mat-label>Trip name</mat-label>
+            <input matInput formControlName="name" placeholder="Croatia 2025" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Destination</mat-label>
+            <input matInput formControlName="destination" placeholder="Croatia" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Year</mat-label>
+            <input matInput type="number" formControlName="year" />
+          </mat-form-field>
+        </div>
+
+        <div class="form-grid-2">
+          <mat-form-field appearance="outline">
+            <mat-label>Start date</mat-label>
+            <input matInput type="date" formControlName="startDate" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>End date</mat-label>
+            <input matInput type="date" formControlName="endDate" />
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Notes</mat-label>
+          <textarea matInput formControlName="notes" rows="3" placeholder="Route, highlights, crew…"></textarea>
+        </mat-form-field>
+
+        <div class="form-actions">
+          <button mat-button type="button" (click)="cancelTripForm()">Cancel</button>
+          <button mat-flat-button color="primary" type="submit" [disabled]="tripForm.invalid">
+            {{ editingTripId() ? 'Save Changes' : 'Add Trip' }}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  }
+
+  <!-- Empty state -->
+  @if (tripsWithCount().length === 0) {
+    <div class="empty-state">
+      <mat-icon>flag</mat-icon>
+      <p>No trips yet. Add your first voyage!</p>
+    </div>
+  }
+
+  <!-- Trip cards grid -->
+  @if (tripsWithCount().length > 0) {
+    <div class="trips-grid">
+      @for (trip of tripsWithCount(); track trip.id) {
+        <div class="trip-card" [class.active-trip]="tripService.activeTripId() === trip.id">
+          <span class="trip-year">{{ trip.year }}</span>
+          <h2 class="trip-name">{{ trip.name }}</h2>
+          <div class="trip-destination">
+            <mat-icon>place</mat-icon>
+            {{ trip.destination }}
+          </div>
+
+          @if (trip.startDate || trip.endDate) {
+            <div class="trip-dates">
+              @if (trip.startDate) {
+                {{ trip.startDate | date:'d MMM yyyy' }}
+              }
+              @if (trip.startDate && trip.endDate) { – }
+              @if (trip.endDate) {
+                {{ trip.endDate | date:'d MMM yyyy' }}
+              }
+            </div>
+          }
+
+          @if (trip.notes) {
+            <p class="trip-notes">{{ trip.notes }}</p>
+          }
+
+          <div class="trip-entry-count">
+            <mat-icon>menu_book</mat-icon>
+            {{ trip.entryCount }} log {{ trip.entryCount === 1 ? 'entry' : 'entries' }}
+          </div>
+
+          <div class="trip-card-actions">
+            @if (tripService.activeTripId() === trip.id) {
+              <span class="active-badge"><mat-icon>check_circle</mat-icon> Active trip</span>
+            } @else {
+              <button mat-stroked-button (click)="setActiveTrip(trip.id)" title="New log entries will default to this trip">
+                <mat-icon>flag</mat-icon> Set active
+              </button>
+            }
+            <button mat-stroked-button (click)="viewTripEntries(trip.id)">
+              <mat-icon>list_alt</mat-icon> Entries
+            </button>
+            <button mat-icon-button (click)="editTrip(trip)" aria-label="Edit trip">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="deleteTrip(trip)" aria-label="Delete trip">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       DIVIDER
+  ════════════════════════════════════════════════════════════════════════ -->
+  <mat-divider class="section-divider"></mat-divider>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SHIPS SECTION
+  ════════════════════════════════════════════════════════════════════════ -->
+  <div class="section-header">
+    <h2 class="section-title"><mat-icon>directions_boat</mat-icon> My Ships</h2>
+    <button mat-flat-button color="primary" (click)="openShipForm()">
+      <mat-icon>add</mat-icon> Add Ship
+    </button>
+  </div>
+
+  <!-- Add / Edit ship form -->
+  @if (showShipForm() || editingShipId()) {
+    <div class="form-card">
+      <form [formGroup]="shipForm" (ngSubmit)="saveShip()">
+
+        <div class="form-grid-2">
+          <mat-form-field appearance="outline">
+            <mat-label>Ship name</mat-label>
+            <input matInput formControlName="name" placeholder="S/Y Adriatica" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Registration number</mat-label>
+            <input matInput formControlName="registrationNumber" placeholder="HR-1234" />
+          </mat-form-field>
+        </div>
+
+        <div class="form-actions">
+          <button mat-button type="button" (click)="cancelShipForm()">Cancel</button>
+          <button mat-flat-button color="primary" type="submit" [disabled]="shipForm.invalid">
+            {{ editingShipId() ? 'Save Changes' : 'Add Ship' }}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  }
+
+  <!-- Ships list -->
+  @if (shipService.ships().length === 0) {
+    <div class="empty-state">
+      <mat-icon>directions_boat</mat-icon>
+      <p>No ships registered yet.</p>
+    </div>
+  }
+
+  @if (shipService.ships().length > 0) {
+    <div class="ships-list">
+      @for (ship of shipService.ships(); track ship.id) {
+        <div class="ship-item" [class.ship-default]="shipService.defaultShipId() === ship.id">
+          <div class="ship-info">
+            <div class="ship-name">
+              {{ ship.name }}
+              @if (shipService.defaultShipId() === ship.id) {
+                <span class="default-badge">default</span>
+              }
+            </div>
+            <div class="ship-reg">{{ ship.registrationNumber }}</div>
+          </div>
+          <div class="ship-actions">
+            @if (shipService.defaultShipId() !== ship.id) {
+              <button mat-stroked-button (click)="setDefaultShip(ship.id)" title="Auto-fill this ship in new log entries">
+                <mat-icon>star_outline</mat-icon> Set default
+              </button>
+            }
+            <button mat-icon-button (click)="editShip(ship)" aria-label="Edit ship">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="deleteShip(ship)" aria-label="Delete ship">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+</div>

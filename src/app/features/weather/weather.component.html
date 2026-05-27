@@ -1,0 +1,209 @@
+<div class="page-container">
+  <h1 class="page-title">
+    <mat-icon>cloud</mat-icon>
+    Weather
+  </h1>
+
+  <mat-tab-group animationDuration="200ms">
+
+    <!-- TAB 1: WINDY FORECAST MAP -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>wind_power</mat-icon>&nbsp;Forecast Map
+      </ng-template>
+
+      <div class="tab-content">
+        <div class="windy-header">
+          <span class="tab-title">Adriatic Forecast — Windy (ECMWF)</span>
+          <div class="windy-controls">
+            <mat-button-toggle-group [value]="windyOverlay()" (change)="windyOverlay.set($event.value)" aria-label="Overlay">
+              @for (o of windyOverlays; track o.value) {
+                <mat-button-toggle [value]="o.value" [matTooltip]="o.label">
+                  <mat-icon>{{ o.icon }}</mat-icon>
+                  <span class="overlay-label">{{ o.label }}</span>
+                </mat-button-toggle>
+              }
+            </mat-button-toggle-group>
+            <button mat-icon-button (click)="openExternal('https://www.windy.com/?43.5,16.4,7')" matTooltip="Open full Windy">
+              <mat-icon>open_in_new</mat-icon>
+            </button>
+          </div>
+        </div>
+        <iframe
+          [src]="windyUrl() | safeUrl"
+          class="windy-iframe"
+          frameborder="0"
+          allowfullscreen
+          title="Windy forecast map">
+        </iframe>
+        <p class="radar-note">Interactive ECMWF forecast map in knots. Switch overlays above. Powered by Windy.com.</p>
+      </div>
+    </mat-tab>
+
+    <!-- TAB 2: RADAR -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>radar</mat-icon>&nbsp;Radar
+      </ng-template>
+
+      <div class="tab-content">
+        <div class="radar-header">
+          <span class="tab-title">Debeljak Radar — Adriatic</span>
+          <div class="radar-meta">
+            <span class="updated">Updated: {{ weatherService.radarUpdatedAt() | date:'HH:mm' }}</span>
+            <button mat-icon-button (click)="refreshRadar()" matTooltip="Refresh radar">
+              <mat-icon>refresh</mat-icon>
+            </button>
+            <button mat-icon-button (click)="openExternal('https://meteo.hr/podaci_e.php?section=podaci_mjerenja&param=radari&el=debeljak&acto=stat&it=13')" matTooltip="Open in new tab">
+              <mat-icon>open_in_new</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div class="radar-image-wrap">
+          <img [src]="weatherService.radarUrl()"
+               alt="Debeljak radar"
+               class="radar-image"
+               (error)="radarImg.classList.add('error')"
+               #radarImg>
+        </div>
+        <p class="radar-note">Auto-refreshes every 5 minutes. Showing reflectivity (dBz) from DHMZ Debeljak station.</p>
+      </div>
+    </mat-tab>
+
+    <!-- TAB 2: METEOALARM WARNINGS -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>warning</mat-icon>&nbsp;Warnings
+      </ng-template>
+
+      <div class="tab-content">
+        <div class="warnings-header">
+          <div class="warnings-title-block">
+            <span class="tab-title">
+              MeteoAlarm —
+              {{ weatherService.hvarOnly() ? 'Hvar Area' : 'All Croatia (HR)' }}
+            </span>
+            @if (weatherService.warningsUpdatedAt()) {
+              <span class="updated-at">
+                Updated {{ weatherService.warningsUpdatedAt() | date:'HH:mm' }}
+                &nbsp;·&nbsp; auto-refreshes every 15 min
+              </span>
+            }
+          </div>
+          <div class="warnings-actions">
+            <mat-button-toggle-group
+              [value]="weatherService.hvarOnly()"
+              (change)="weatherService.hvarOnly.set($event.value)"
+              aria-label="Region filter">
+              <mat-button-toggle [value]="true" matTooltip="Show warnings for Hvar / Dalmatia only">
+                <mat-icon>place</mat-icon>
+                <span class="overlay-label">Hvar area</span>
+              </mat-button-toggle>
+              <mat-button-toggle [value]="false" matTooltip="Show all Croatia warnings">
+                <mat-icon>public</mat-icon>
+                <span class="overlay-label">All Croatia</span>
+              </mat-button-toggle>
+            </mat-button-toggle-group>
+            <button mat-stroked-button
+                    (click)="refreshWarnings()"
+                    [disabled]="weatherService.warningsLoading()"
+                    matTooltip="Fetch latest warnings now">
+              <mat-icon [class.spinning]="weatherService.warningsLoading()">refresh</mat-icon>
+              Refresh
+            </button>
+            <a mat-stroked-button
+               href="https://meteoalarm.org/en/live/warning/bf850bc6-8706-43d7-b74a-c9b346c1ef4e/27af5646-2309-4da7-8185-6d4e186c76cf"
+               target="_blank"
+               rel="noopener noreferrer"
+               matTooltip="Open MeteoAlarm Croatia page">
+              <mat-icon>open_in_new</mat-icon>
+              meteoalarm.org
+            </a>
+          </div>
+        </div>
+
+        @if (weatherService.warningsLoading()) {
+          <div class="loading-center">
+            <mat-spinner diameter="40"></mat-spinner>
+            <span>Loading warnings...</span>
+          </div>
+        } @else if (weatherService.warningsError()) {
+          <div class="error-box">
+            <mat-icon>error_outline</mat-icon>
+            <span>{{ weatherService.warningsError() }}</span>
+            <button mat-stroked-button (click)="refreshWarnings()">Retry</button>
+          </div>
+        } @else if (weatherService.warnings().length === 0) {
+          <div class="no-warnings">
+            <mat-icon>check_circle</mat-icon>
+            <span>No active weather warnings for {{ weatherService.hvarOnly() ? 'the Hvar area' : 'Croatia' }}</span>
+          </div>
+        } @else {
+          <div class="warnings-list">
+            @for (w of weatherService.warnings(); track w.id) {
+              <div class="warning-card" [style.border-left-color]="severityColors[w.severity]">
+                <div class="warning-header">
+                  <span class="severity-chip" [ngClass]="w.severity">{{ w.severity }}</span>
+                  <span class="warning-type">{{ w.type }}</span>
+                  <span class="warning-country">{{ w.country }}</span>
+                </div>
+                <div class="warning-headline">{{ w.headline }}</div>
+                @if (w.regions.length > 0) {
+                  <div class="warning-regions">
+                    <mat-icon>place</mat-icon>
+                    {{ w.regions.join(', ') }}
+                  </div>
+                }
+                <div class="warning-times">
+                  <span><mat-icon>schedule</mat-icon> From: {{ w.onset | date:'d MMM HH:mm' }}</span>
+                  <span><mat-icon>timer_off</mat-icon> Until: {{ w.expires | date:'d MMM HH:mm' }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </mat-tab>
+
+    <!-- TABS 3 & 4: meteo.hr iframes -->
+    @for (page of meteoPages; track page.id) {
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>{{ page.icon }}</mat-icon>&nbsp;{{ page.title }}
+        </ng-template>
+
+        <div class="tab-content">
+          <div class="iframe-header">
+            <span class="tab-title">{{ page.title }}</span>
+            <button mat-icon-button (click)="openExternal(page.url)" matTooltip="Open in new tab">
+              <mat-icon>open_in_new</mat-icon>
+            </button>
+          </div>
+
+          @if (!iframeBlocked[page.id]) {
+            <iframe
+              [src]="page.url | safeUrl"
+              class="meteo-iframe"
+              (load)="onIframeLoad($event, page.id)"
+              (error)="onIframeError($event, page.id)"
+              title="{{ page.title }}">
+            </iframe>
+          }
+
+          @if (iframeBlocked[page.id]) {
+            <div class="iframe-fallback">
+              <mat-icon class="block-icon">lock</mat-icon>
+              <h3>Cannot embed this page</h3>
+              <p>The DHMZ website blocks embedding via security policy (X-Frame-Options).</p>
+              <button mat-flat-button color="primary" (click)="openExternal(page.url)">
+                <mat-icon>open_in_new</mat-icon>
+                Open {{ page.title }} on meteo.hr
+              </button>
+            </div>
+          }
+        </div>
+      </mat-tab>
+    }
+
+  </mat-tab-group>
+</div>

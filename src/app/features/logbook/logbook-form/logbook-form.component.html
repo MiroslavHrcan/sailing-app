@@ -1,0 +1,239 @@
+<div class="page-container">
+  <h1 class="page-title">
+    <mat-icon>{{ isEdit ? 'edit' : 'add_circle' }}</mat-icon>
+    {{ isEdit ? 'Edit Log Entry' : 'New Log Entry' }}
+  </h1>
+
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <mat-accordion multi>
+
+      <!-- SHIP & VOYAGE -->
+      <mat-expansion-panel expanded>
+        <mat-expansion-panel-header>
+          <mat-panel-title><mat-icon>directions_boat</mat-icon> Ship & Voyage</mat-panel-title>
+        </mat-expansion-panel-header>
+        <div class="form-grid">
+
+          <!-- Trip selector -->
+          <mat-form-field appearance="fill" class="full-width">
+            <mat-label>Trip</mat-label>
+            <mat-select formControlName="tripId">
+              <mat-option [value]="null">— No specific trip —</mat-option>
+              @for (trip of sortedTrips(); track trip.id) {
+                <mat-option [value]="trip.id">{{ trip.name }} · {{ trip.destination }}</mat-option>
+              }
+            </mat-select>
+            <mat-hint>
+              <a class="manage-link" [routerLink]="['/trips']">Manage trips</a>
+            </mat-hint>
+          </mat-form-field>
+
+          <!-- Ship selector -->
+          @if (shipService.ships().length > 0) {
+            <mat-form-field appearance="fill" class="full-width">
+              <mat-label>Select saved ship</mat-label>
+              <mat-select formControlName="selectedShipId" (selectionChange)="onShipSelect($event.value)">
+                <mat-option [value]="null">— Enter manually —</mat-option>
+                @for (ship of shipService.ships(); track ship.id) {
+                  <mat-option [value]="ship.id">{{ ship.name }} ({{ ship.registrationNumber }})</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
+
+          <mat-form-field appearance="fill">
+            <mat-label>Ship Name</mat-label>
+            <input matInput formControlName="shipName" required>
+          </mat-form-field>
+          <mat-form-field appearance="fill">
+            <mat-label>Registration Number</mat-label>
+            <input matInput formControlName="registrationNumber">
+          </mat-form-field>
+          <mat-form-field appearance="fill">
+            <mat-label>Port of Departure</mat-label>
+            <input matInput formControlName="portDeparture" required>
+            <mat-icon matSuffix>anchor</mat-icon>
+          </mat-form-field>
+          <mat-form-field appearance="fill">
+            <mat-label>Port of Arrival</mat-label>
+            <input matInput formControlName="portArrival">
+            <mat-icon matSuffix>anchor</mat-icon>
+          </mat-form-field>
+          <mat-form-field appearance="fill">
+            <mat-label>Date</mat-label>
+            <input matInput formControlName="date" type="date" required>
+          </mat-form-field>
+          <mat-form-field appearance="fill">
+            <mat-label>Time (UTC)</mat-label>
+            <input matInput formControlName="time" type="time" required>
+          </mat-form-field>
+          <mat-form-field appearance="fill" class="full-width">
+            <mat-label>Watchkeeping Officer</mat-label>
+            <input matInput formControlName="watchkeepingOfficer" required>
+            <mat-icon matSuffix>person</mat-icon>
+          </mat-form-field>
+        </div>
+      </mat-expansion-panel>
+
+      <!-- NAVIGATION -->
+      <mat-expansion-panel expanded>
+        <mat-expansion-panel-header>
+          <mat-panel-title><mat-icon>navigation</mat-icon> Navigation</mat-panel-title>
+        </mat-expansion-panel-header>
+        <div class="form-grid">
+          <mat-form-field appearance="fill">
+            <mat-label>Latitude (°N)</mat-label>
+            <input matInput formControlName="lat" type="number" step="0.00001">
+            <mat-hint>e.g. 43.508</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="fill">
+            <mat-label>Longitude (°E)</mat-label>
+            <input matInput formControlName="lon" type="number" step="0.00001">
+            <mat-hint>e.g. 16.440</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="fill">
+            <mat-label>Course Steered (°)</mat-label>
+            <input matInput formControlName="courseSteered" type="number" min="0" max="360">
+          </mat-form-field>
+          <mat-form-field appearance="fill">
+            <mat-label>Speed (knots)</mat-label>
+            <input matInput formControlName="speed" type="number" min="0" step="0.1">
+          </mat-form-field>
+        </div>
+
+        <!-- Map picker -->
+        <div class="map-picker-bar">
+          <button mat-stroked-button type="button" (click)="toggleMapPicker()">
+            <mat-icon>{{ mapPickerOpen() ? 'close' : 'map' }}</mat-icon>
+            {{ mapPickerOpen() ? 'Close map' : 'Pick position on map' }}
+          </button>
+          <button mat-stroked-button type="button" (click)="useGps()">
+            <mat-icon>gps_fixed</mat-icon> Use GPS
+          </button>
+          @if (form.value.lat && form.value.lon) {
+            <span class="coords-display">
+              {{ form.value.lat | number:'1.4-5' }}°N, {{ form.value.lon | number:'1.4-5' }}°E
+            </span>
+          }
+        </div>
+
+        @if (mapPickerOpen()) {
+          <div class="map-picker-wrap">
+            <mgl-map
+              [style]="mapStyle"
+              [zoom]="[9]"
+              [center]="mapPickerCenter()"
+              [interactive]="true"
+              (mapLoad)="onMapPickerLoad($event)"
+              (mapClick)="onMapPickerClick($event)"
+              class="map-picker">
+            </mgl-map>
+            <p class="map-hint"><mat-icon>touch_app</mat-icon> Tap the map to set your position — the gold marker will move.</p>
+          </div>
+        }
+      </mat-expansion-panel>
+
+      <!-- METEOROLOGICAL -->
+      <mat-expansion-panel expanded>
+        <mat-expansion-panel-header>
+          <mat-panel-title><mat-icon>air</mat-icon> Meteorological</mat-panel-title>
+        </mat-expansion-panel-header>
+        <div class="form-grid">
+          <mat-form-field appearance="fill">
+            <mat-label>Wind Speed (knots)</mat-label>
+            <input matInput formControlName="windSpeed" type="number" min="0">
+          </mat-form-field>
+          <mat-form-field appearance="fill">
+            <mat-label>Wind Direction (°)</mat-label>
+            <input matInput formControlName="windDirection" type="number" min="0" max="360">
+          </mat-form-field>
+          <mat-form-field appearance="fill">
+            <mat-label>Sea State</mat-label>
+            <mat-select formControlName="seaState">
+              @for (s of seaStates; track s[0]) {
+                <mat-option [value]="s[0]">{{ s[1] }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="fill">
+            <mat-label>Visibility</mat-label>
+            <mat-select formControlName="visibility">
+              @for (v of visibilities; track v[0]) {
+                <mat-option [value]="v[0]">{{ v[1] }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="fill">
+            <mat-label>Barometric Pressure (hPa)</mat-label>
+            <input matInput formControlName="barometricPressure" type="number">
+          </mat-form-field>
+          <mat-form-field appearance="fill">
+            <mat-label>Air Temperature (°C)</mat-label>
+            <input matInput formControlName="airTemperature" type="number">
+          </mat-form-field>
+          <mat-form-field appearance="fill">
+            <mat-label>Water Temperature (°C)</mat-label>
+            <input matInput formControlName="waterTemperature" type="number">
+          </mat-form-field>
+        </div>
+      </mat-expansion-panel>
+
+      <!-- ENGINEERING -->
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title><mat-icon>settings</mat-icon> Engineering</mat-panel-title>
+        </mat-expansion-panel-header>
+        <div class="form-grid">
+          <mat-form-field appearance="fill">
+            <mat-label>Engine RPM</mat-label>
+            <input matInput formControlName="engineRpm" type="number" min="0">
+          </mat-form-field>
+          <mat-form-field appearance="fill">
+            <mat-label>Fuel Consumption (L/hr)</mat-label>
+            <input matInput formControlName="fuelConsumption" type="number" min="0" step="0.1">
+          </mat-form-field>
+          <mat-form-field appearance="fill">
+            <mat-label>Remaining Fuel (L)</mat-label>
+            <input matInput formControlName="remainingFuel" type="number" min="0">
+          </mat-form-field>
+          <mat-form-field appearance="fill">
+            <mat-label>Remaining Water (L)</mat-label>
+            <input matInput formControlName="remainingWater" type="number" min="0">
+          </mat-form-field>
+        </div>
+      </mat-expansion-panel>
+
+      <!-- SAFETY & NOTES -->
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title><mat-icon>shield</mat-icon> Safety & Notes</mat-panel-title>
+        </mat-expansion-panel-header>
+        <div class="safety-section">
+          <mat-checkbox formControlName="safetyCheckDone" color="primary" class="safety-check">
+            Safety inspection completed
+          </mat-checkbox>
+          <mat-divider></mat-divider>
+          <mat-form-field appearance="fill" class="full-width">
+            <mat-label>Incident Notes</mat-label>
+            <textarea matInput formControlName="incidentNotes" rows="3"
+              placeholder="Accidents, groundings, breakdowns, medical emergencies..."></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="fill" class="full-width">
+            <mat-label>Crew & Cargo Changes</mat-label>
+            <textarea matInput formControlName="crewRosterChanges" rows="2"
+              placeholder="Crew roster changes, cargo loading, ballast water..."></textarea>
+          </mat-form-field>
+        </div>
+      </mat-expansion-panel>
+
+    </mat-accordion>
+
+    <div class="form-actions">
+      <button mat-button type="button" (click)="cancel()">Cancel</button>
+      <button mat-flat-button color="primary" type="submit">
+        <mat-icon>save</mat-icon>
+        {{ isEdit ? 'Update Entry' : 'Save Entry' }}
+      </button>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s \"https://hub.meteoalarm.org/api/v1/warnings/HR\")",
+      "Bash(curl -sv \"https://hub.meteoalarm.org/api/v1/warnings/HR\")",
+      "Bash(curl -s \"https://feeds.meteoalarm.org/api/v1/warnings/feeds-croatia\")",
+      "Bash(curl -s \"https://meteoalarm.org/api/v1/warnings?country=HR\")",
+      "Bash(curl -s \"https://feeds.meteoalarm.org/warnings/feeds-croatia\" -o /dev/null -w \"%{http_code}\")"
+    ]
+  }
+}

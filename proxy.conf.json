@@ -1,0 +1,9 @@
+{
+  "/api/meteoalarm": {
+    "target": "https://feeds.meteoalarm.org/api/v1/warnings",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/api/meteoalarm": "" },
+    "logLevel": "info"
+  }
+}

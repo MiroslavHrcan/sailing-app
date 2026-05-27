@@ -1,0 +1,29 @@
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    root /var/www/sailing-app;
+    index index.html;
+
+    # Proxy MeteoAlarm API to avoid CORS
+    location /api/meteoalarm/ {
+        proxy_pass https://feeds.meteoalarm.org/api/v1/warnings/;
+        proxy_ssl_server_name on;
+        proxy_set_header Host feeds.meteoalarm.org;
+        proxy_set_header Accept application/json;
+        add_header Access-Control-Allow-Origin *;
+    }
+
+    # SPA routing fallback
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location ~* \.(js|css|png|jpg|svg|ico|woff2)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+}
