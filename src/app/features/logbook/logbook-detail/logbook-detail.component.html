@@ -1,0 +1,101 @@
+@if (entry) {
+  <div class="page-container">
+    <div class="detail-header">
+      <button mat-icon-button (click)="back()" aria-label="Back">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <h1 class="page-title">
+        <mat-icon>article</mat-icon>
+        {{ entry.date }} · {{ entry.time }} UTC
+      </h1>
+      <div class="header-actions">
+        <button mat-stroked-button (click)="edit()">
+          <mat-icon>edit</mat-icon> Edit
+        </button>
+        <button mat-stroked-button color="warn" (click)="delete()">
+          <mat-icon>delete</mat-icon> Delete
+        </button>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+
+      <!-- Ship & Voyage -->
+      <div class="detail-card">
+        <div class="card-title"><mat-icon>directions_boat</mat-icon> Ship & Voyage</div>
+        <div class="fields">
+          <div class="field"><span class="label">Ship</span><span class="value">{{ entry.shipName }}</span></div>
+          <div class="field"><span class="label">Reg. No.</span><span class="value">{{ entry.registrationNumber || '—' }}</span></div>
+          <div class="field"><span class="label">From</span><span class="value">{{ entry.portDeparture }}</span></div>
+          <div class="field"><span class="label">To</span><span class="value">{{ entry.portArrival || '—' }}</span></div>
+          <div class="field"><span class="label">Officer</span><span class="value">{{ entry.watchkeepingOfficer }}</span></div>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="detail-card">
+        <div class="card-title"><mat-icon>navigation</mat-icon> Navigation</div>
+        <div class="fields">
+          <div class="field"><span class="label">Position</span><span class="value">{{ formatCoord(entry.position.lat, entry.position.lon) }}</span></div>
+          <div class="field"><span class="label">Course</span><span class="value">{{ entry.courseSteered }}°</span></div>
+          <div class="field"><span class="label">Speed</span><span class="value">{{ entry.speed }} kt</span></div>
+        </div>
+      </div>
+
+      <!-- Meteorological -->
+      <div class="detail-card">
+        <div class="card-title"><mat-icon>air</mat-icon> Meteorological</div>
+        <div class="fields">
+          <div class="field"><span class="label">Wind</span><span class="value">{{ entry.windSpeed }} kt — {{ entry.windSpeed | beaufort }}</span></div>
+          <div class="field"><span class="label">Wind Dir.</span><span class="value">{{ entry.windDirection }}°</span></div>
+          <div class="field"><span class="label">Sea State</span><span class="value">{{ entry.seaState | seaState }}</span></div>
+          <div class="field"><span class="label">Visibility</span><span class="value">{{ entry.visibility }}</span></div>
+          <div class="field"><span class="label">Pressure</span><span class="value">{{ entry.barometricPressure }} hPa</span></div>
+          <div class="field"><span class="label">Air Temp</span><span class="value">{{ entry.airTemperature }} °C</span></div>
+          <div class="field"><span class="label">Water Temp</span><span class="value">{{ entry.waterTemperature }} °C</span></div>
+        </div>
+      </div>
+
+      <!-- Engineering -->
+      <div class="detail-card">
+        <div class="card-title"><mat-icon>settings</mat-icon> Engineering</div>
+        <div class="fields">
+          <div class="field"><span class="label">Engine RPM</span><span class="value">{{ entry.engineRpm }}</span></div>
+          <div class="field"><span class="label">Fuel Use</span><span class="value">{{ entry.fuelConsumption }} L/hr</span></div>
+          <div class="field"><span class="label">Fuel Left</span><span class="value">{{ entry.remainingFuel }} L</span></div>
+          <div class="field"><span class="label">Water Left</span><span class="value">{{ entry.remainingWater }} L</span></div>
+        </div>
+      </div>
+
+      <!-- Safety -->
+      <div class="detail-card" [class.has-incident]="entry.incidentNotes">
+        <div class="card-title"><mat-icon>shield</mat-icon> Safety & Notes</div>
+        <div class="fields">
+          <div class="field">
+            <span class="label">Safety Check</span>
+            <span class="value">
+              @if (entry.safetyCheckDone) {
+                <mat-icon class="ok-icon">check_circle</mat-icon> Done
+              } @else {
+                <mat-icon class="warn-icon">warning</mat-icon> Pending
+              }
+            </span>
+          </div>
+          @if (entry.incidentNotes) {
+            <div class="field full">
+              <span class="label">Incidents</span>
+              <span class="value incident">{{ entry.incidentNotes }}</span>
+            </div>
+          }
+          @if (entry.crewRosterChanges) {
+            <div class="field full">
+              <span class="label">Crew Changes</span>
+              <span class="value">{{ entry.crewRosterChanges }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+    </div>
+  </div>
+}

@@ -1,0 +1,37 @@
+<div class="map-page">
+  <div class="map-controls">
+    <mat-button-toggle-group [value]="activeBase()" (change)="switchBase($event.value)" aria-label="Base layer">
+      <mat-button-toggle value="osm">
+        <mat-icon>map</mat-icon> OSM
+      </mat-button-toggle>
+      <mat-button-toggle value="satellite">
+        <mat-icon>satellite</mat-icon> Satellite
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+
+    <button mat-mini-fab
+            [color]="seaMarkVisible() ? 'primary' : undefined"
+            (click)="toggleSeaMark()"
+            matTooltip="Toggle nautical charts (OpenSeaMap)">
+      <mat-icon>anchor</mat-icon>
+    </button>
+
+    <button mat-mini-fab (click)="centerOnCroatia()" matTooltip="Center on Croatia">
+      <mat-icon>my_location</mat-icon>
+    </button>
+  </div>
+
+  <mgl-map
+    [style]="mapStyle()"
+    [zoom]="[zoom]"
+    [center]="center"
+    (mapLoad)="onMapLoad($event)"
+    class="map-container full-map">
+  </mgl-map>
+
+  <div class="map-legend">
+    <div class="legend-item"><span class="dot blue"></span> Log entry</div>
+    <div class="legend-item"><span class="dot red"></span> Incident / Safety</div>
+    <div class="legend-item"><span class="dot gold-border"></span> + OpenSeaMap overlay</div>
+  </div>
+</div>
