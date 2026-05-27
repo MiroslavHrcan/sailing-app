@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MapComponent as MglMapComponent } from '@maplibre/ngx-maplibre-gl';
 import { Map as MapLibre, GeoJSONSource } from 'maplibre-gl';
@@ -11,8 +12,9 @@ import { NgClass } from '@angular/common';
 import { LogbookService } from '../../core/services/logbook.service';
 import { WeatherService } from '../../core/services/weather.service';
 import { BeaufortPipe } from '../../shared/pipes/beaufort.pipe';
+import { SafeUrlPipe } from '../../shared/pipes/safe-url.pipe';
 import { SEVERITY_COLORS } from '../../core/models/weather.model';
-import type { FeatureCollection, Feature, Point } from 'geojson';
+import type { FeatureCollection, Feature, Point, LineString } from 'geojson';
 import { LogbookEntry } from '../../core/models/logbook-entry.model';
 
 @Component({
@@ -21,7 +23,7 @@ import { LogbookEntry } from '../../core/models/logbook-entry.model';
   imports: [
     RouterLink, DatePipe,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule,
-    MglMapComponent, NgClass, BeaufortPipe,
+    MglMapComponent, NgClass, BeaufortPipe, SafeUrlPipe, MatTooltipModule,
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
@@ -66,6 +68,30 @@ export class DashboardComponent implements OnInit {
     const entries = this.logbookService.entries();
     if (entries.length === 0) return;
 
+    // Sailed path lines — drawn first so position dots appear on top
+    const pathFeatures = entries
+      .filter(e => e.path && e.path.length >= 2)
+      .map((e): Feature<LineString> => ({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: e.path! },
+        properties: { id: e.id },
+      }));
+
+    if (pathFeatures.length > 0) {
+      map.addSource('paths', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: pathFeatures },
+      });
+      map.addLayer({
+        id: 'paths-line',
+        type: 'line',
+        source: 'paths',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': '#d4a017', 'line-width': 2, 'line-dasharray': [2, 2] },
+      });
+    }
+
+    // Position dots
     const geojson: FeatureCollection = {
       type: 'FeatureCollection',
       features: entries.map((e): Feature<Point> => ({

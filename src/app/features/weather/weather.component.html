@@ -51,22 +51,46 @@
           <span class="tab-title">Debeljak Radar — Adriatic</span>
           <div class="radar-meta">
             <span class="updated">Updated: {{ weatherService.radarUpdatedAt() | date:'HH:mm' }}</span>
-            <button mat-icon-button (click)="refreshRadar()" matTooltip="Refresh radar">
+            <button mat-stroked-button (click)="refreshRadar()" matTooltip="Refresh radar">
               <mat-icon>refresh</mat-icon>
+              Refresh
             </button>
-            <button mat-icon-button (click)="openExternal('https://meteo.hr/podaci_e.php?section=podaci_mjerenja&param=radari&el=debeljak&acto=stat&it=13')" matTooltip="Open in new tab">
+            <a mat-icon-button
+               [href]="RADAR_PAGE_URL"
+               target="_blank"
+               rel="noopener noreferrer"
+               matTooltip="Open in new tab">
               <mat-icon>open_in_new</mat-icon>
-            </button>
+            </a>
           </div>
         </div>
-        <div class="radar-image-wrap">
-          <img [src]="weatherService.radarUrl()"
-               alt="Debeljak radar"
-               class="radar-image"
-               (error)="radarImg.classList.add('error')"
-               #radarImg>
-        </div>
-        <p class="radar-note">Auto-refreshes every 5 minutes. Showing reflectivity (dBz) from DHMZ Debeljak station.</p>
+
+        @if (!iframeBlocked['radar']) {
+          <iframe
+            [src]="radarIframeUrl() | safeUrl"
+            class="meteo-iframe"
+            (load)="onIframeLoad($event, 'radar')"
+            (error)="onIframeError($event, 'radar')"
+            title="Debeljak Radar">
+          </iframe>
+        }
+
+        @if (iframeBlocked['radar']) {
+          <div class="iframe-fallback">
+            <mat-icon class="block-icon">lock</mat-icon>
+            <h3>Cannot embed the radar page</h3>
+            <p>The DHMZ website blocks embedding via security policy (X-Frame-Options).</p>
+            <a mat-flat-button color="primary"
+               [href]="RADAR_PAGE_URL"
+               target="_blank"
+               rel="noopener noreferrer">
+              <mat-icon>open_in_new</mat-icon>
+              Open Debeljak Radar on meteo.hr
+            </a>
+          </div>
+        }
+
+        <p class="radar-note">Live Debeljak radar from DHMZ (meteo.hr). If embedding is blocked, use "Open in new tab".</p>
       </div>
     </mat-tab>
 

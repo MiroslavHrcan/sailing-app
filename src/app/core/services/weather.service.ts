@@ -37,7 +37,7 @@ export class WeatherService {
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);
 
-  private readonly RADAR_BASE = 'https://vrijeme.hr/radari/debeljak_1300.png';
+  private readonly RADAR_BASE = 'https://vrijeme.hr/anim_debeljak.gif';
   // Proxied via /api/meteoalarm/ → feeds.meteoalarm.org (CORS workaround)
   private readonly WARNINGS_URL = '/api/meteoalarm/feeds-croatia';
 

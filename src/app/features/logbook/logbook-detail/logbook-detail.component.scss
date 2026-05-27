@@ -81,3 +81,27 @@
 
 .ok-icon   { color: #4caf50; font-size: 1rem; }
 .warn-icon { color: #ff9800; font-size: 1rem; }
+
+.path-card {
+  grid-column: 1 / -1;
+}
+
+.path-map {
+  width: 100%;
+  height: 320px;
+  border-radius: 6px;
+  overflow: hidden;
+
+  @media (max-width: 600px) { height: 220px; }
+}
+
+.path-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--color-text-dim);
+
+  mat-icon { font-size: 0.9rem; width: 0.9rem; height: 0.9rem; }
+}

@@ -118,6 +118,29 @@
         </div>
 
         @if (mapPickerOpen()) {
+          <div class="path-toolbar">
+            <mat-button-toggle-group [value]="mapMode()" (change)="mapMode.set($event.value)" aria-label="Map mode">
+              <mat-button-toggle value="position">
+                <mat-icon>place</mat-icon>
+                <span class="toggle-label">Set Position</span>
+              </mat-button-toggle>
+              <mat-button-toggle value="path">
+                <mat-icon>route</mat-icon>
+                <span class="toggle-label">Draw Path</span>
+              </mat-button-toggle>
+            </mat-button-toggle-group>
+
+            @if (pathPoints().length > 0) {
+              <span class="path-info">{{ pathPoints().length }} waypoint{{ pathPoints().length !== 1 ? 's' : '' }}</span>
+              <button mat-icon-button type="button" (click)="undoLastPoint()" matTooltip="Undo last waypoint">
+                <mat-icon>undo</mat-icon>
+              </button>
+              <button mat-icon-button type="button" (click)="clearPath()" matTooltip="Clear entire path">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            }
+          </div>
+
           <div class="map-picker-wrap">
             <mgl-map
               [style]="mapStyle"
@@ -128,7 +151,14 @@
               (mapClick)="onMapPickerClick($event)"
               class="map-picker">
             </mgl-map>
-            <p class="map-hint"><mat-icon>touch_app</mat-icon> Tap the map to set your position — the gold marker will move.</p>
+            <p class="map-hint">
+              <mat-icon>touch_app</mat-icon>
+              @if (mapMode() === 'position') {
+                Tap to move the gold position marker.
+              } @else {
+                Tap to add waypoints — a dashed gold line will trace your sailed route.
+              }
+            </p>
           </div>
         }
       </mat-expansion-panel>
@@ -144,8 +174,12 @@
             <input matInput formControlName="windSpeed" type="number" min="0">
           </mat-form-field>
           <mat-form-field appearance="fill">
-            <mat-label>Wind Direction (°)</mat-label>
-            <input matInput formControlName="windDirection" type="number" min="0" max="360">
+            <mat-label>Wind Direction</mat-label>
+            <mat-select formControlName="windDirection">
+              @for (d of windDirections; track d.degrees) {
+                <mat-option [value]="d.degrees">{{ d.label }} ({{ d.degrees }}°)</mat-option>
+              }
+            </mat-select>
           </mat-form-field>
           <mat-form-field appearance="fill">
             <mat-label>Sea State</mat-label>

@@ -29,6 +29,7 @@ export interface LogbookEntry {
 
   // Navigation
   position: Position;
+  path?: [number, number][];       // sailed route — [lon, lat] waypoints (GeoJSON order)
   courseSteered: number;           // 0–360°
   speed: number;                   // knots
 
@@ -98,6 +99,30 @@ export const SEA_STATE_LABELS: Record<SeaState, string> = {
   'very-high': 'Very High (8)',
   'phenomenal': 'Phenomenal (9)',
 };
+
+export const WIND_DIRECTION_OPTIONS: { label: string; degrees: number }[] = [
+  { label: 'N',   degrees: 0   },
+  { label: 'NNE', degrees: 22  },
+  { label: 'NE',  degrees: 45  },
+  { label: 'ENE', degrees: 67  },
+  { label: 'E',   degrees: 90  },
+  { label: 'ESE', degrees: 112 },
+  { label: 'SE',  degrees: 135 },
+  { label: 'SSE', degrees: 157 },
+  { label: 'S',   degrees: 180 },
+  { label: 'SSW', degrees: 202 },
+  { label: 'SW',  degrees: 225 },
+  { label: 'WSW', degrees: 247 },
+  { label: 'W',   degrees: 270 },
+  { label: 'WNW', degrees: 292 },
+  { label: 'NW',  degrees: 315 },
+  { label: 'NNW', degrees: 337 },
+];
+
+export function degreesToCompass(deg: number): string {
+  const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+  return dirs[Math.round(((deg % 360) + 360) % 360 / 22.5) % 16];
+}
 
 export const VISIBILITY_LABELS: Record<Visibility, string> = {
   'excellent': 'Excellent (>10 nm)',

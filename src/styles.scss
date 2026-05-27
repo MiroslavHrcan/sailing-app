@@ -66,6 +66,11 @@ html, body {
   --mdc-outlined-text-field-focus-outline-color: var(--color-gold);
   --mdc-outlined-text-field-caret-color: var(--color-gold);
   --mdc-outlined-text-field-container-shape: 6px;
+
+  // mat-select trigger: the displayed selected value text
+  --mat-select-trigger-text-color: var(--color-white);
+  --mat-select-enabled-arrow-color: var(--color-text-dim);
+  --mat-select-focused-arrow-color: var(--color-gold);
 }
 
 // Ensure textarea and native inputs are always readable
@@ -113,6 +118,21 @@ html, body {
 .mat-mdc-tab-group {
   --mat-tab-header-active-label-text-color: var(--color-gold);
   --mat-tab-header-active-indicator-color: var(--color-gold);
+}
+
+// Stroked (outlined) buttons: visible on dark background when no explicit color attr
+.mat-mdc-outlined-button:not([color]) {
+  --mat-outlined-button-label-text-color: var(--color-text-dim);
+  --mat-outlined-button-outline-color: rgba(212, 160, 23, 0.4);
+  &:hover { --mat-outlined-button-label-text-color: var(--color-gold-light); }
+}
+
+// mat-button-toggle dark theme: text visible on dark backgrounds (map controls, weather filters, etc.)
+.mat-button-toggle-group {
+  --mat-standard-button-toggle-text-color: var(--color-text-dim);
+  --mat-standard-button-toggle-selected-state-text-color: var(--color-gold-light);
+  --mat-standard-button-toggle-selected-state-background-color: rgba(212, 160, 23, 0.2);
+  --mat-standard-button-toggle-divider-color: rgba(212, 160, 23, 0.2);
 }
 
 .page-container {

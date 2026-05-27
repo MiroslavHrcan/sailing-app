@@ -9,6 +9,7 @@ import { Map as MapLibre, GeoJSONSource, MapMouseEvent } from 'maplibre-gl';
 import type { StyleSpecification } from 'maplibre-gl';
 import { LogbookService } from '../../core/services/logbook.service';
 import { LogbookEntry } from '../../core/models/logbook-entry.model';
+import { SafeUrlPipe } from '../../shared/pipes/safe-url.pipe';
 import type { FeatureCollection, Feature, Point } from 'geojson';
 
 type BaseLayer = 'osm' | 'satellite';
@@ -16,7 +17,7 @@ type BaseLayer = 'osm' | 'satellite';
 @Component({
   selector: 'app-map',
   standalone: true,
-  imports: [MglMapComponent, MatButtonModule, MatIconModule, MatButtonToggleModule, MatTooltipModule],
+  imports: [MglMapComponent, MatButtonModule, MatIconModule, MatButtonToggleModule, MatTooltipModule, SafeUrlPipe],
   templateUrl: './map.component.html',
   styleUrl: './map.component.scss',
 })
@@ -27,6 +28,8 @@ export class MapComponent implements OnInit, OnDestroy {
   mapInstance?: MapLibre;
   activeBase = signal<BaseLayer>('osm');
   seaMarkVisible = signal(true);
+  readonly mapView = signal<'nautical' | 'custom'>('nautical');
+  readonly googleMapsUrl = 'https://www.google.com/maps/d/embed?mid=143dlpkNXvRfu2k4KSV54ZTO2zVjZ4tM&ehbc=2E312F';
 
   center: [number, number] = [16.44, 43.51]; // Split area, [lng, lat]
   zoom = 8;

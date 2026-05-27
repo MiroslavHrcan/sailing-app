@@ -7,7 +7,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
@@ -18,7 +20,7 @@ import { LogbookService } from '../../../core/services/logbook.service';
 import { ShipService } from '../../../core/services/ship.service';
 import { TripService } from '../../../core/services/trip.service';
 import {
-  createEmptyEntry, SEA_STATE_LABELS, VISIBILITY_LABELS,
+  createEmptyEntry, SEA_STATE_LABELS, VISIBILITY_LABELS, WIND_DIRECTION_OPTIONS,
   SeaState, Visibility,
 } from '../../../core/models/logbook-entry.model';
 
@@ -28,7 +30,8 @@ import {
   imports: [
     ReactiveFormsModule,
     MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatCheckboxModule, MatButtonModule, MatIconModule,
+    MatCheckboxModule, MatButtonModule, MatButtonToggleModule,
+    MatIconModule, MatTooltipModule,
     MatExpansionModule, MatSnackBarModule, MatDividerModule,
     MglMapComponent, RouterLink, DecimalPipe,
   ],
@@ -49,10 +52,12 @@ export class LogbookFormComponent implements OnInit {
   isEdit = false;
   seaStates = Object.entries(SEA_STATE_LABELS) as [SeaState, string][];
   visibilities = Object.entries(VISIBILITY_LABELS) as [Visibility, string][];
+  windDirections = WIND_DIRECTION_OPTIONS;
 
   readonly mapPickerOpen = signal(false);
-  // Snapshot of coordinates taken once when the map opens — NOT a getter that re-evaluates every CD cycle
   readonly mapPickerCenter = signal<[number, number]>([16.44, 43.51]);
+  readonly mapMode = signal<'position' | 'path'>('position');
+  readonly pathPoints = signal<[number, number][]>([]);
   private mapInstance: MapLibre | null = null;
 
   readonly sortedTrips = computed(() =>
@@ -135,6 +140,9 @@ export class LogbookFormComponent implements OnInit {
           tripId: entry.tripId ?? null,
           selectedShipId: null,
         });
+        if (entry.path && entry.path.length > 0) {
+          this.pathPoints.set(entry.path);
+        }
       } else {
         this.snackBar.open('Entry not found', 'Dismiss', { duration: 3000 });
         this.router.navigate(['/logbook']);
@@ -192,12 +200,13 @@ export class LogbookFormComponent implements OnInit {
   }
 
   onMapPickerLoad(map: MapLibre): void {
-    // MapLibre fires this outside Angular's zone — run inside to keep signals & CD in sync
     this.ngZone.run(() => {
       this.mapInstance = map;
       const lat = this.form.value.lat ?? 43.508;
       const lon = this.form.value.lon ?? 16.440;
+      const existingPath = this.pathPoints();
 
+      // Position marker
       map.addSource('picker-point', {
         type: 'geojson',
         data: { type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] }, properties: {} },
@@ -206,28 +215,90 @@ export class LogbookFormComponent implements OnInit {
         id: 'picker-circle',
         type: 'circle',
         source: 'picker-point',
-        paint: {
-          'circle-radius': 10,
-          'circle-color': '#d4a017',
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#fff',
+        paint: { 'circle-radius': 10, 'circle-color': '#d4a017', 'circle-stroke-width': 2, 'circle-stroke-color': '#fff' },
+      });
+
+      // Sailed path line
+      map.addSource('path-line', {
+        type: 'geojson',
+        data: { type: 'Feature', geometry: { type: 'LineString', coordinates: existingPath.length >= 2 ? existingPath : [] }, properties: {} },
+      });
+      map.addLayer({
+        id: 'path-line-layer',
+        type: 'line',
+        source: 'path-line',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': '#d4a017', 'line-width': 3, 'line-dasharray': [2, 2] },
+      });
+
+      // Waypoint dots
+      map.addSource('path-points', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: existingPath.map(coord => ({
+            type: 'Feature' as const,
+            geometry: { type: 'Point' as const, coordinates: coord },
+            properties: {},
+          })),
         },
+      });
+      map.addLayer({
+        id: 'path-points-layer',
+        type: 'circle',
+        source: 'path-points',
+        paint: { 'circle-radius': 5, 'circle-color': '#f0c040', 'circle-stroke-width': 2, 'circle-stroke-color': '#fff' },
       });
     });
   }
 
   onMapPickerClick(event: { lngLat: { lat: number; lng: number } }): void {
-    // MapLibre events fire outside Angular's zone
     this.ngZone.run(() => {
       const lat = parseFloat(event.lngLat.lat.toFixed(5));
       const lon = parseFloat(event.lngLat.lng.toFixed(5));
-      this.form.patchValue({ lat, lon });
 
-      if (this.mapInstance) {
-        const source = this.mapInstance.getSource('picker-point') as GeoJSONSource;
-        source?.setData({ type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] }, properties: {} });
+      if (this.mapMode() === 'position') {
+        this.form.patchValue({ lat, lon });
+        if (this.mapInstance) {
+          const source = this.mapInstance.getSource('picker-point') as GeoJSONSource;
+          source?.setData({ type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] }, properties: {} });
+        }
+      } else {
+        const newPath: [number, number][] = [...this.pathPoints(), [lon, lat]];
+        this.pathPoints.set(newPath);
+        this.updatePathOnMap(newPath);
       }
     });
+  }
+
+  private updatePathOnMap(path: [number, number][]): void {
+    if (!this.mapInstance) return;
+    (this.mapInstance.getSource('path-line') as GeoJSONSource)?.setData({
+      type: 'Feature',
+      geometry: { type: 'LineString', coordinates: path.length >= 2 ? path : [] },
+      properties: {},
+    });
+    (this.mapInstance.getSource('path-points') as GeoJSONSource)?.setData({
+      type: 'FeatureCollection',
+      features: path.map(coord => ({
+        type: 'Feature' as const,
+        geometry: { type: 'Point' as const, coordinates: coord },
+        properties: {},
+      })),
+    });
+  }
+
+  undoLastPoint(): void {
+    const path = this.pathPoints();
+    if (path.length === 0) return;
+    const newPath = path.slice(0, -1) as [number, number][];
+    this.pathPoints.set(newPath);
+    this.updatePathOnMap(newPath);
+  }
+
+  clearPath(): void {
+    this.pathPoints.set([]);
+    this.updatePathOnMap([]);
   }
 
   useGps(): void {
@@ -262,8 +333,10 @@ export class LogbookFormComponent implements OnInit {
       return;
     }
     const v = this.form.getRawValue();
+    const path = this.pathPoints();
     const data = {
       tripId: v.tripId ?? undefined,
+      path: path.length >= 2 ? path : undefined,
       shipName: v.shipName!,
       registrationNumber: v.registrationNumber ?? '',
       portDeparture: v.portDeparture!,

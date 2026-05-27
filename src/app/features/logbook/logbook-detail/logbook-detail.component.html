@@ -47,7 +47,7 @@
         <div class="card-title"><mat-icon>air</mat-icon> Meteorological</div>
         <div class="fields">
           <div class="field"><span class="label">Wind</span><span class="value">{{ entry.windSpeed }} kt — {{ entry.windSpeed | beaufort }}</span></div>
-          <div class="field"><span class="label">Wind Dir.</span><span class="value">{{ entry.windDirection }}°</span></div>
+          <div class="field"><span class="label">Wind Dir.</span><span class="value">{{ windLabel(entry.windDirection) }}</span></div>
           <div class="field"><span class="label">Sea State</span><span class="value">{{ entry.seaState | seaState }}</span></div>
           <div class="field"><span class="label">Visibility</span><span class="value">{{ entry.visibility }}</span></div>
           <div class="field"><span class="label">Pressure</span><span class="value">{{ entry.barometricPressure }} hPa</span></div>
@@ -95,6 +95,25 @@
           }
         </div>
       </div>
+
+      <!-- Sailed Path -->
+      @if (entry.path && entry.path.length >= 2) {
+        <div class="detail-card path-card">
+          <div class="card-title"><mat-icon>route</mat-icon> Sailed Path</div>
+          <mgl-map
+            [style]="pathMapStyle"
+            [zoom]="[9]"
+            [center]="pathMapCenter()"
+            [interactive]="true"
+            (mapLoad)="onPathMapLoad($event)"
+            class="path-map">
+          </mgl-map>
+          <div class="path-stats">
+            <mat-icon>place</mat-icon>
+            {{ entry.path.length }} waypoints · ~{{ pathDistanceNm(entry.path) }} nm
+          </div>
+        </div>
+      }
 
     </div>
   </div>

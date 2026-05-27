@@ -37,6 +37,13 @@ export class WeatherComponent implements OnInit {
 
   iframeBlocked: Record<string, boolean> = {};
 
+  readonly RADAR_PAGE_URL = 'https://meteo.hr/podaci_e.php?section=podaci_mjerenja&param=radari&el=debeljak&acto=stat';
+  private readonly radarRefreshKey = signal(0);
+  readonly radarIframeUrl = computed(() => {
+    const k = this.radarRefreshKey();
+    return k === 0 ? this.RADAR_PAGE_URL : `${this.RADAR_PAGE_URL}&_t=${k}`;
+  });
+
   // Windy forecast map
   readonly windyOverlay = signal<WindyOverlay>('wind');
   readonly windyUrl = computed(() => {
@@ -113,6 +120,8 @@ export class WeatherComponent implements OnInit {
   }
 
   refreshRadar(): void {
+    this.iframeBlocked['radar'] = false;
+    this.radarRefreshKey.update(k => k + 1);
     this.weatherService.refreshRadar();
   }
 }

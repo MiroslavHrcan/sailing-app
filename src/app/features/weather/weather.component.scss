@@ -135,6 +135,23 @@
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
+
+  mat-button-toggle-group {
+    background: rgba(26, 58, 92, 0.6);
+    border: 1px solid rgba(212, 160, 23, 0.3);
+    border-radius: 4px;
+  }
+
+  mat-button-toggle {
+    color: var(--color-text-dim);
+    font-size: 0.8rem;
+
+    &.mat-button-toggle-checked {
+      background: rgba(212, 160, 23, 0.2);
+      color: var(--color-gold-light);
+    }
+  }
 }
 
 .loading-center {

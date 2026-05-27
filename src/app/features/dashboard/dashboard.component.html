@@ -82,6 +82,11 @@
         @if (weatherService.warnings().length > 0) {
           <span class="warning-count">{{ weatherService.warnings().length }}</span>
         }
+        <button mat-icon-button class="open-btn"
+                (click)="weatherService.loadWarnings()"
+                [disabled]="weatherService.warningsLoading()">
+          <mat-icon>refresh</mat-icon>
+        </button>
       </div>
       @if (weatherService.warningsLoading()) {
         <div class="loading-row"><mat-spinner diameter="24"></mat-spinner> Loading...</div>
@@ -139,15 +144,46 @@
       </div>
     </div>
 
+    <!-- Custom Google Map -->
+    <div class="widget custom-map-widget">
+      <div class="widget-title">
+        <mat-icon>place</mat-icon> Voyage Map
+        <div class="widget-title-actions">
+          <a mat-icon-button
+             href="https://www.google.com/maps/d/viewer?mid=143dlpkNXvRfu2k4KSV54ZTO2zVjZ4tM"
+             target="_blank"
+             rel="noopener noreferrer"
+             matTooltip="Open in Google Maps">
+            <mat-icon>open_in_new</mat-icon>
+          </a>
+        </div>
+      </div>
+      <iframe
+        [src]="'https://www.google.com/maps/d/embed?mid=143dlpkNXvRfu2k4KSV54ZTO2zVjZ4tM&ehbc=2E312F' | safeUrl"
+        class="custom-map-iframe"
+        allowfullscreen
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade">
+      </iframe>
+    </div>
+
     <!-- Radar Quick View -->
     <div class="widget radar-widget">
       <div class="widget-title">
         <mat-icon>radar</mat-icon> Adriatic Radar
-        <button mat-icon-button (click)="openWeather()" class="open-btn">
-          <mat-icon>open_in_new</mat-icon>
-        </button>
+        <div class="widget-title-actions">
+          <button mat-icon-button (click)="weatherService.refreshRadar()">
+            <mat-icon>refresh</mat-icon>
+          </button>
+          <a mat-icon-button
+             href="https://meteo.hr/podaci_e.php?section=podaci_mjerenja&param=radari&el=debeljak&acto=stat"
+             target="_blank"
+             rel="noopener noreferrer">
+            <mat-icon>open_in_new</mat-icon>
+          </a>
+        </div>
       </div>
-      <img [src]="weatherService.radarUrl()" alt="Radar" class="radar-thumb">
+      <img [src]="weatherService.radarUrl()" alt="Debeljak radar" class="radar-thumb">
     </div>
 
   </div>
